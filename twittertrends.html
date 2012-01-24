@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+body, div, ul, li {
+    margin: 0;
+    padding: 0;
+    font: 1em/1.4em helvetica,serif;
+    color:#333;
+    cursor:default;
+    list-style:none;
+}
+
+#trends {
+    width: 300px;
+    font-size: 90%;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+}
+
+#tweets {
+    width: 550px;
+    position: absolute;
+    top: 10px;
+    left: 330px;
+}
+
+#tweets .tweet {
+    border-bottom: 1px solid #ccc;
+    overflow: auto;
+    margin: 0 0 10px 0;
+    padding: 10px 0;
+}
+
+#tweets div.tweet:last-child {
+    border: none;
+}
+
+#tweets .tweet img {
+    display: block;
+    float: left;
+    border: 1px solid #333;
+    margin: 0 5px 0 0;
+}
+
+#tweets .tweet .text {
+    display: block;
+    float: left;
+    width: 470px;
+}
+
+#tweets .tweet .user {
+    display: block;
+}
+
+#refresh {
+    cursor: pointer;
+}
+</style>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script>
+
+$(function() {
+    // get current trends
+    gettrends();
+
+    $('#refresh').live('click', function() {
+        gettrends();
+    });
+
+    $('#trends a').live('click', function(event) {
+        event.preventDefault();
+
+        var tweets_html = '';
+        var query = $(this).attr('href').replace('?q=', '');
+        var header = $(this).attr('title');
+        $('#tweets').fadeOut('slow', function() {
+            $(this).html('');
+            // get search results
+            $.getJSON('http://search.twitter.com/search.json?callback=?',
+                {
+                    q: query,
+                    show_user: 'true',
+                    rpp: '15'
+                },
+                function(data) {
+                    results_length = data.results.length
+                    for (var i = 0; i < results_length; i++)
+                    {
+                        tweets_html += '<div class="tweet">'
+                                    +'<img src="'+data.results[i].profile_image_url+'" width="48" height="48" />'
+                                    +'<div class="text">'+data.results[i].text
+                                    +'<span class="user">&ndash; @'+data.results[i].from_user+'</span></div>'
+                                    +'</div>'
+                    }
+                    $('#tweets').html('<h1>'+header+'</h1>'+tweets_html).fadeIn('slow');
+                }
+            );
+        });
+    });
+});
+
+function gettrends()
+{
+    $('#trends').fadeOut('slow', function() {
+        $.getJSON('http://api.twitter.com/1/trends/23424977.json?callback=?', function(o) {
+            var trends = o[0].trends;
+            var trends_length = trends.length;
+            var trends_html = '';
+            $('#trends').html('')
+            for (var i = 0; i < trends_length; i++)
+            {
+                trends_html += '<li><a href="?q='+trends[i].query+'" title="'+trends[i].name+'">'
+                            +trends[i].name
+                            +'</a></li>';
+            }
+
+            trends_html += '<li id="refresh">Refresh</li>'
+
+            $('#trends').html('<ul>'+trends_html+'</ul>');
+        });
+    }).fadeIn('slow');
+}
+</script>
+</head>
+
+<body>
+
+<div id="trends"></div>
+<div id="tweets"></div>
+
+</body>
+</html>
